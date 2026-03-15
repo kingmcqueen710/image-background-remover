@@ -86,16 +86,17 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await upstream.arrayBuffer())
 
     // Downscale to max 1000px on the longest side (free-tier limitation)
-    let outputBuffer = buffer
+    let outputBuffer: Buffer = buffer
     try {
       const sharp = (await import('sharp')).default
       const meta = await sharp(buffer).metadata()
       const longest = Math.max(meta.width ?? 0, meta.height ?? 0)
       if (longest > 1000) {
-        outputBuffer = await sharp(buffer)
+        const resized = await sharp(buffer)
           .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true })
           .png()
           .toBuffer()
+        outputBuffer = resized as unknown as Buffer
       }
     } catch {
       // sharp optional — skip resize if unavailable
